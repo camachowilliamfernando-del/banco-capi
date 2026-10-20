@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nodo · Apertura de cuenta</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070b14; --surface:#0f1626; --surface2:#151e33; --line:#243049;
+  --text:#eaf0ff; --muted:#8c9bba; --blue:#3d7bff; --neon:#2dffc4; --danger:#ff6b81;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:radial-gradient(700px 380px at 50% -10%,#14275a 0%,transparent 70%),var(--bg);
+  color:var(--text);font-family:'Sora',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  display:flex;justify-content:center;overflow-x:hidden;
+}
+.app{width:100%;max-width:430px;min-height:100%;display:flex;flex-direction:column;padding:20px 22px 28px;position:relative}
+.screen{display:flex;flex-direction:column;flex:1;opacity:0;transform:translateX(24px);pointer-events:none;position:absolute;inset:0;padding:20px 22px 28px;transition:opacity .32s ease,transform .32s cubic-bezier(.2,.8,.2,1)}
+.screen.active{opacity:1;transform:none;pointer-events:auto;position:relative;padding:0}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px;min-height:32px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.1rem}
+.brand i{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--neon));display:block;position:relative}
+.brand i::after{content:"";position:absolute;inset:8px;border:2px solid #04101c;border-radius:50%}
+.steps{display:flex;gap:6px}
+.steps b{width:26px;height:4px;border-radius:9px;background:var(--line);transition:background .3s}
+.steps b.on{background:var(--neon)}
+.back{background:none;border:0;color:var(--muted);font:inherit;font-size:.85rem;cursor:pointer;padding:6px 0}
+h1{font-size:1.9rem;line-height:1.15;font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.45rem;line-height:1.2;font-weight:800;letter-spacing:-.01em}
+.lead{color:var(--muted);font-size:.95rem;line-height:1.55;margin-top:12px;max-width:34ch}
+.hero{flex:1;display:flex;flex-direction:column;justify-content:center;padding:10px 0 30px}
+.card-art{height:150px;border-radius:22px;margin-bottom:34px;position:relative;overflow:hidden;background:linear-gradient(135deg,#1b3fa8 0%,#3d7bff 55%,#2dffc4 140%);box-shadow:0 18px 40px rgba(61,123,255,.28);padding:18px;display:flex;flex-direction:column;justify-content:space-between;animation:float 5s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.card-art::after{content:"";position:absolute;width:220px;height:220px;border-radius:50%;right:-70px;top:-90px;background:rgba(255,255,255,.12)}
+.card-art .chip{width:38px;height:28px;border-radius:7px;background:linear-gradient(135deg,#ffe9a8,#d8a94a)}
+.card-art .num{font-size:.95rem;letter-spacing:.18em;color:rgba(255,255,255,.9)}
+.perks{display:flex;gap:16px;margin-top:22px;color:var(--muted);font-size:.78rem}
+.perks span::before{content:"✓ ";color:var(--neon)}
+.btn{width:100%;border:0;border-radius:16px;padding:16px;font:inherit;font-weight:600;font-size:1rem;cursor:pointer;transition:transform .15s,filter .15s,opacity .15s,box-shadow .2s;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,var(--blue),#2f62d9);color:#fff;box-shadow:0 10px 24px rgba(61,123,255,.35)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--line);margin-top:12px}
+.btn-neon{background:var(--neon);color:#04140f}
+.actions{margin-top:auto;padding-top:22px}
+form{margin-top:24px;display:flex;flex-direction:column;gap:16px;flex:1}
+.field label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:7px}
+.field input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 15px;color:var(--text);font:inherit;font-size:.98rem;transition:border-color .2s,box-shadow .2s}
+.field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(61,123,255,.15);outline:none}
+.field input::placeholder{color:#55627f}
+.field.bad input{border-color:var(--danger)}
+.err{display:none;color:var(--danger);font-size:.75rem;margin-top:6px}
+.field.bad .err{display:block}
+.secure{display:flex;gap:10px;align-items:flex-start;font-size:.75rem;color:var(--muted);line-height:1.5;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.scan-wrap{display:flex;justify-content:center;margin:26px 0 18px}
+.oval{position:relative;width:250px;height:320px;border-radius:50% / 46%;overflow:hidden;background:#000;box-shadow:0 0 0 3px var(--line);transition:box-shadow .3s,transform .3s}
+.oval.scanning{box-shadow:0 0 0 3px var(--neon),0 0 34px rgba(45,255,196,.35)}
+.oval.ok{box-shadow:0 0 0 3px var(--neon),0 0 44px rgba(45,255,196,.6);transform:scale(1.02)}
+.oval.warn{box-shadow:0 0 0 3px #ffb84d,0 0 34px rgba(255,184,77,.35)}
+.oval video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}
+.oval .fallback{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:26px;color:var(--muted);font-size:.8rem;line-height:1.5;background:var(--surface)}
+.guide{position:absolute;inset:0;border-radius:inherit;border:2px dashed rgba(255,255,255,.35);animation:breathe 2.4s ease-in-out infinite;pointer-events:none;transition:border-color .3s}
+.oval.scanning .guide,.oval.ok .guide{border-color:transparent;animation:none}
+@keyframes breathe{0%,100%{transform:scale(.96);opacity:.6}50%{transform:scale(1);opacity:1}}
+.beam{position:absolute;left:0;right:0;height:3px;top:0;display:none;background:linear-gradient(90deg,transparent,var(--neon),transparent);box-shadow:0 0 16px var(--neon);animation:sweep 1.6s ease-in-out infinite alternate}
+.oval.scanning .beam{display:block}
+@keyframes sweep{to{top:calc(100% - 3px)}}
+.tick{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(7,11,20,.55);font-size:4rem;color:var(--neon)}
+.oval.ok .tick{display:flex}
+.hint{text-align:center;font-size:.88rem;color:var(--muted);min-height:2.6em;line-height:1.45;transition:color .3s}
+.bar{height:6px;border-radius:9px;background:var(--surface2);overflow:hidden;margin:14px 0 4px;visibility:hidden}
+.bar.show{visibility:visible}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--neon));transition:width .12s linear}
+.pct{text-align:center;font-size:.75rem;color:var(--muted);min-height:1.2em}
+.done{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;justify-content:center;gap:6px}
+.seal{width:96px;height:96px;border-radius:50%;background:rgba(45,255,196,.12);border:2px solid var(--neon);display:flex;align-items:center;justify-content:center;margin-bottom:22px;animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+.seal svg{width:46px;height:46px;stroke:var(--neon);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:50;stroke-dashoffset:50;animation:draw .5s .3s forwards}
+@keyframes pop{from{transform:scale(.4);opacity:0}}
+@keyframes draw{to{stroke-dashoffset:0}}
+.card3d{width:100%;margin-top:26px;padding:20px;border-radius:22px;background:linear-gradient(135deg,rgba(61,123,255,.35),rgba(45,255,196,.15));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.18);box-shadow:0 20px 50px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.05) inset;transform-style:preserve-3d;transition:transform .25s ease;color:#fff;text-align:left;position:relative;overflow:hidden}
+.card3d::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.25),transparent 45%);opacity:.6}
+.card3d .chip{width:42px;height:30px;border-radius:8px;background:linear-gradient(135deg,#ffe9a8,#d8a94a);margin-bottom:16px}
+.card3d small{display:block;color:rgba(255,255,255,.75);font-size:.75rem;letter-spacing:.05em}
+.card3d .num{display:block;font-size:1.1rem;letter-spacing:.14em;margin:6px 0 18px;font-variant-numeric:tabular-nums}
+.card3d .saldo{font-size:2rem;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.card3d .owner{font-size:.8rem;color:rgba(255,255,255,.8);margin-top:6px;text-transform:uppercase;letter-spacing:.1em}
+.acct{width:100%;margin-top:20px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px}
+.acct .row{display:flex;justify-content:space-between;font-size:.85rem;padding:10px 0;border-bottom:1px solid var(--line)}
+.acct .row:last-child{border-bottom:0}
+.acct .row span:first-child{color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#0f1626;color:var(--text);border:1px solid var(--line);border-radius:14px;padding:12px 16px;font-size:.85rem;box-shadow:0 12px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:99;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{border-color:var(--danger);color:#ffd0d6}
+.loader{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);z-index:200;gap:16px;transition:opacity .4s}
+.loader.hide{opacity:0;pointer-events:none}
+.spinner{width:44px;height:44px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--neon);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader p{color:var(--muted);font-size:.85rem}
+/* Lista de cuentas guardadas */
+.accounts-list{margin-top:18px;display:flex;flex-direction:column;gap:10px;max-height:220px;overflow-y:auto;padding-right:4px}
+.accounts-list::-webkit-scrollbar{width:6px}
+.accounts-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
+.account-item{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;transition:border-color .2s,background .2s,transform .1s;text-align:left;width:100%;font:inherit;color:var(--text)}
+.account-item:hover,.account-item:focus{border-color:var(--blue);background:var(--surface2);outline:none}
+.account-item:active{transform:scale(.99)}
+.account-item .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--neon));display:flex;align-items:center;justify-content:center;font-weight:800;color:#04101c;flex-shrink:0;font-size:.95rem}
+.account-item .info{flex:1;min-width:0}
+.account-item .info strong{display:block;font-size:.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-item .info small{display:block;font-size:.72rem;color:var(--muted);margin-top:2px;letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.account-item .chev{color:var(--muted);font-size:1.2rem;flex-shrink:0}
+.empty-state{text-align:center;color:var(--muted);font-size:.85rem;padding:26px 14px;background:var(--surface);border:1px dashed var(--line);border-radius:14px;line-height:1.5}
+.masked{letter-spacing:.12em}
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader">
+  <div class="spinner"></div>
+  <p id="loaderMsg">Preparando la app…</p>
+</div>
+
+<main class="app">
+
+  <section class="screen active" id="s-welcome">
+    <div class="top"><div class="brand"><i></i>Nodo</div></div>
+    <div class="hero">
+      <div class="card-art" aria-hidden="true"><div class="chip"></div><div class="num">•••• •••• •••• 0427</div></div>
+      <h1>Tu cuenta, abierta en tres minutos.</h1>
+      <p class="lead">Sin filas ni papeles. Verificamos tu identidad con tu rostro desde el celular.</p>
+      <div class="perks"><span>Sin costo de apertura</span><span>Cuenta individual</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" data-go="s-register">Abrir cuenta nueva</button>
+      <button class="btn btn-ghost" id="btnLogin">Iniciar sesión</button>
+    </div>
+  </section>
+
+  <section class="screen" id="s-register">
+    <div class="top">
+      <button class="back" data-go="s-welcome">‹ Volver</button>
+      <div class="steps"><b class="on"></b><b></b><b></b></div>
+    </div>
+    <h2>Cuéntanos quién eres</h2>
+    <p class="lead">Usa los datos exactos de tu documento de identidad.</p>
+    <form id="form" novalidate>
+      <div class="field"><label for="nombres">Nombres y apellidos</label>
+        <input id="nombres" autocomplete="name" placeholder="Ej. María Fernanda Torres" required>
+        <div class="err">Escribe tu nombre completo (nombre y apellido).</div></div>
+      <div class="field"><label for="cedula">Cédula o documento de identidad</label>
+        <input id="cedula" inputmode="numeric" maxlength="13" placeholder="Ej. 1712345678" required>
+        <div class="err">Ingresa entre 8 y 13 dígitos, solo números.</div></div>
+      <div class="field"><label for="correo">Correo electrónico</label>
+        <input id="correo" type="email" autocomplete="email" placeholder="nombre@correo.com" required>
+        <div class="err">Revisa el formato del correo.</div></div>
+      <div class="field"><label for="telefono">Teléfono móvil</label>
+        <input id="telefono" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej. 0991234567" required>
+        <div class="err">Ingresa un teléfono de 9 a 12 dígitos.</div></div>
+      <div class="secure">🔒 <span>Tus datos viajan cifrados y solo se usan para abrir tu cuenta. Tu rostro se guarda como un código irreversible, nunca como imagen.</span></div>
+      <div class="actions"><button class="btn btn-primary" type="submit">Continuar a verificación</button></div>
+    </form>
+  </section>
+
+  <section class="screen" id="s-face">
+    <div class="top">
+      <button class="back" id="faceBack">‹ Volver</button>
+      <div class="steps"><b class="on"></b><b class="on"></b><b></b></div>
+    </div>
+    <h2 id="faceTitle">Verifica tu identidad</h2>
+    <p class="lead" id="faceLead">Ubica tu rostro dentro del óvalo, con buena luz y sin lentes oscuros.</p>
+    <div class="scan-wrap">
+      <div class="oval" id="oval">
+        <video id="video" autoplay muted playsinline></video>
+        <div class="fallback" id="fallback">No pudimos usar la cámara. Revisa los permisos del navegador.</div>
+        <div class="guide"></div><div class="beam"></div><div class="tick">✓</div>
+      </div>
+    </div>
+    <div class="hint" id="hint">Activando cámara…</div>
+    <div class="bar" id="bar"><i id="barFill"></i></div>
+    <div class="pct" id="pct"></div>
+    <div class="actions"><button class="btn btn-neon" id="btnScan" disabled>Escanear rostro</button></div>
+  </section>
+
+  <section class="screen" id="s-done">
+    <div class="top"><div class="brand"><i></i>Nodo</div><div class="steps"><b class="on"></b><b class="on"></b><b class="on"></b></div></div>
+    <div class="done">
+      <div class="seal"><svg viewBox="0 0 48 48"><path d="M10 25l9 9 19-20"/></svg></div>
+      <h2 id="doneTitle">¡Cuenta creada!</h2>
+      <p class="lead" style="text-align:center">Tu identidad fue verificada con reconocimiento facial y tu cuenta individual ya está lista.</p>
+      <div class="card3d" id="doneCard">
+        <div class="chip"></div>
+        <small>Número de cuenta</small>
+        <span class="num" id="acctNum">—</span>
+        <small>Saldo inicial disponible</small>
+        <div class="saldo" id="doneSaldo">$0.00</div>
+      </div>
+      <div class="secure" style="margin-top:18px;text-align:left">💾 <span>Pulsa <strong>Guardar cuenta</strong> para registrarla en este dispositivo y poder iniciar sesión con ella después.</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-neon" id="btnSave">Guardar cuenta</button>
+      <button class="btn btn-primary" id="btnCopy">Copiar número de cuenta</button>
+      <button class="btn btn-ghost" id="btnRestart">Ir al inicio</button>
+    </div>
+  </section>
+
+  <!-- NUEVA PANTALLA DE LOGIN CON DATOS GUARDADOS -->
+  <section class="screen" id="s-login">
+    <div class="top">
+      <button class="back" data-go="s-welcome">‹ Volver</button>
+      <div class="steps"><b class="on"></b><b class="on"></b><b></b></div>
+    </div>
+    <h2>Inicia sesión</h2>
+    <p class="lead">Selecciona una cuenta guardada o ingresa tus datos.</p>
+
+    <div id="accountsContainer" style="margin-top:20px">
+      <!-- Se llena dinámicamente -->
+    </div>
+
+    <form id="loginForm" novalidate style="margin-top:20px">
+      <div class="field"><label for="loginId">Cédula o correo</label>
+        <input id="loginId" autocomplete="username" placeholder="Ej. 1712345678 o nombre@correo.com" required>
+        <div class="err">Ingresa tu cédula o correo registrado.</div></div>
+      <div class="field"><label for="loginNum">Número de cuenta</label>
+        <input id="loginNum" inputmode="numeric" maxlength="14" placeholder="Ej. 1234 5678 9012" required>
+        <div class="err">Ingresa el número de cuenta (12 dígitos).</div></div>
+      <div class="actions" style="padding-top:12px">
+        <button class="btn btn-primary" type="submit">Entrar</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="screen" id="s-dashboard">
+    <div class="top">
+      <div class="brand"><i></i>Nodo</div>
+      <button class="back" id="btnLogout">Cerrar sesión</button>
+    </div>
+    <h2 id="dashHello">Hola de nuevo</h2>
+    <p class="lead">Este es tu saldo actualizado.</p>
+    <div class="card3d" id="dashCard">
+      <div class="chip"></div>
+      <small>Número de cuenta</small>
+      <span class="num" id="dashNum">—</span>
+      <small>Saldo disponible</small>
+      <div class="saldo" id="dashSaldo">$0.00</div>
+      <div class="owner" id="dashOwner">—</div>
+    </div>
+    <div class="acct">
+      <div class="row"><span>Estado</span><span id="dashEstado">activa</span></div>
+      <div class="row"><span>Tipo</span><span>Ahorro individual</span></div>
+      <div class="row"><span>Creada</span><span id="dashFecha">—</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-ghost" id="btnCopy2">Copiar número de cuenta</button>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const screens = document.querySelectorAll('.screen');
+  let toastTimer;
+  function toast(msg, isErr){
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.toggle('err', !!isErr);
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+  }
+  function buzz(p){ if (navigator.vibrate) try{ navigator.vibrate(p); }catch(e){} }
+  function go(id){
+    if (id !== 's-face') stopCamera();
+    screens.forEach(s => s.classList.toggle('active', s.id === id));
+    window.scrollTo(0,0);
+    if (id === 's-face') startCamera();
+    if (id === 's-login') renderAccounts();
+  }
+  document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
+
+  /* ============================================================
+     Persistencia con localStorage
+  ============================================================ */
+  const KEY = 'nodo-cuentas-v1';
+  function loadCuentas(){
+    try { return JSON.parse(localStorage.getItem(KEY) || '[]'); }
+    catch(e){ return []; }
+  }
+  function saveCuentas(arr){
+    localStorage.setItem(KEY, JSON.stringify(arr));
+  }
+
+  /* ============================================================
+     Sesión persistente
+  ============================================================ */
+  const SESSION_KEY = 'nodo_session';
+  function saveSession(cuenta){
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+      id: cuenta.id, exp: Date.now() + 1000*60*15
+    }));
+  }
+  function getActiveSession(){
+    try {
+      const s = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+      if (s && s.exp > Date.now()) return s;
+      sessionStorage.removeItem(SESSION_KEY);
+      return null;
+    } catch(e){ return null; }
+  }
+  function restoreSessionIfAny(){
+    const s = getActiveSession();
+    if (!s) return false;
+    const cuenta = loadCuentas().find(c => c.id === s.id);
+    if (cuenta){ showDashboard(cuenta); return true; }
+    return false;
+  }
+
+  /* ============================================================
+     "Biometría" simulada (solo para registro)
+  ============================================================ */
+  const faceCanvas = document.createElement('canvas');
+  faceCanvas.width = 32; faceCanvas.height = 32;
+  const faceCtx = faceCanvas.getContext('2d', { willReadFrequently:true });
+
+  function captureDescriptor(){
+    const v = $('video');
+    if (!v.videoWidth) return null;
+    faceCtx.drawImage(v, 0, 0, 32, 32);
+    const data = faceCtx.getImageData(0, 0, 32, 32).data;
+    const vec = new Float32Array(64);
+    for (let i = 0; i < 64; i++){
+      let sum = 0, count = 0;
+      const bx = (i % 8) * 4, by = Math.floor(i / 8) * 4;
+      for (let y = 0; y < 4; y++){
+        for (let x = 0; x < 4; x++){
+          const idx = ((by + y) * 32 + (bx + x)) * 4;
+          sum += 0.299*data[idx] + 0.587*data[idx+1] + 0.114*data[idx+2];
+          count++;
+        }
+      }
+      vec[i] = sum / count / 255;
+    }
+    return Array.from(vec);
+  }
+
+  /* ============================================================
+     Cámara
+  ============================================================ */
+  const video = $('video'), oval = $('oval'), hint = $('hint'), btnScan = $('btnScan');
+  let stream = null, cameraOk = false;
+  let pendingUser = null;
+  let cuentaPendiente = null;
+
+  async function startCamera(){
+    resetScan();
+    hint.textContent = 'Activando cámara…';
+    btnScan.disabled = true;
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('sin API');
+      stream = await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode:'user', width:{ideal:720}, height:{ideal:960} }, audio:false
+      });
+      video.srcObject = stream;
+      await video.play();
+      cameraOk = true;
+      $('fallback').style.display = 'none';
+      hint.textContent = 'Centra tu rostro en el óvalo y pulsa «Escanear rostro».';
+      btnScan.textContent = 'Escanear rostro';
+    } catch (err){
+      cameraOk = false;
+      $('fallback').style.display = 'flex';
+      hint.textContent = 'Cámara no disponible. Revisa los permisos del navegador.';
+      btnScan.textContent = 'Reintentar cámara';
+    }
+    btnScan.disabled = false;
+  }
+  function stopCamera(){
+    if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+    video.srcObject = null;
+  }
+  function resetScan(){
+    oval.classList.remove('scanning','ok','warn');
+    $('bar').classList.remove('show');
+    $('barFill').style.width = '0%';
+    $('pct').textContent = '';
+    btnScan.textContent = 'Escanear rostro';
+    btnScan.disabled = false;
+  }
+
+  btnScan.addEventListener('click', async () => {
+    if (!cameraOk){ startCamera(); return; }
+    btnScan.disabled = true;
+    oval.classList.add('scanning');
+    $('bar').classList.add('show');
+
+    let p = 0;
+    const bar = setInterval(() => {
+      p = Math.min(100, p + 3 + Math.random()*4);
+      $('barFill').style.width = p + '%';
+      $('pct').textContent = Math.round(p) + '%';
+    }, 120);
+
+    hint.textContent = 'Detectando rostro…';
+    await new Promise(r => setTimeout(r, 1400));
+    hint.textContent = 'Parpadea una vez para confirmar que eres real.';
+    await new Promise(r => setTimeout(r, 1400));
+    hint.textContent = 'Procesando rostro…';
+
+    const descriptor = captureDescriptor();
+    if (!descriptor){
+      clearInterval(bar);
+      oval.classList.remove('scanning');
+      oval.classList.add('warn');
+      hint.textContent = 'No se pudo capturar tu rostro. Reintenta.';
+      btnScan.disabled = false;
+      return;
+    }
+
+    await new Promise(r => {
+      const iv = setInterval(() => {
+        p = Math.min(100, p + 8);
+        $('barFill').style.width = p + '%';
+        $('pct').textContent = Math.round(p) + '%';
+        if (p >= 100){ clearInterval(iv); r(); }
+      }, 60);
+    });
+    clearInterval(bar);
+
+    finishRegister(descriptor);
+  });
+
+  /* ============================================================
+     Registro
+  ============================================================ */
+  const rules = {
+    nombres:  v => v.trim().split(/\s+/).filter(Boolean).length >= 2 && v.trim().length >= 5,
+    cedula:   v => /^\d{8,13}$/.test(v),
+    correo:   v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v),
+    telefono: v => /^\+?\d{9,12}$/.test(v.replace(/[\s-]/g,''))
+  };
+  Object.keys(rules).forEach(k => $(k).addEventListener('input', () => $(k).parentElement.classList.remove('bad')));
+  $('cedula').addEventListener('input', e => e.target.value = e.target.value.replace(/\D/g,''));
+
+  $('form').addEventListener('submit', e => {
+    e.preventDefault();
+    let ok = true;
+    Object.keys(rules).forEach(k => {
+      const valid = rules[k]($(k).value);
+      $(k).parentElement.classList.toggle('bad', !valid);
+      if (!valid && ok) $(k).focus();
+      ok = ok && valid;
+    });
+    if (!ok) return;
+    pendingUser = {
+      nombres: $('nombres').value.trim(),
+      cedula: $('cedula').value,
+      correo: $('correo').value.trim(),
+      telefono: $('telefono').value.trim()
+    };
+    $('faceTitle').textContent = 'Verifica tu identidad';
+    $('faceLead').textContent = 'Ubica tu rostro dentro del óvalo, con buena luz y sin lentes oscuros.';
+    go('s-face');
+  });
+
+  $('faceBack').addEventListener('click', () => go('s-register'));
+
+  function genNumeroCuenta(){
+    const r = n => Array.from({length:n}, () => Math.floor(Math.random()*10)).join('');
+    return r(4) + ' ' + r(4) + ' ' + r(4);
+  }
+  function randomSaldo(){
+    const v = 50 + Math.random() * 4950;
+    return Math.round(v * 100) / 100;
+  }
+  function fmtMoney(n){
+    return n.toLocaleString('es-EC', { style:'currency', currency:'USD' });
+  }
+  function maskNum(n){
+    // "1234 5678 9012" -> "•••• •••• 9012"
+    const digits = n.replace(/\s/g,'');
+    return '•••• •••• ' + digits.slice(-4);
+  }
+
+  function finishRegister(descriptor){
+    const cuentas = loadCuentas();
+    if (cuentas.some(c => c.cedula === pendingUser.cedula)){
+      oval.classList.remove('scanning'); oval.classList.add('warn');
+      hint.textContent = 'Esta cédula ya tiene una cuenta.';
+      toast('Cédula ya registrada. Inicia sesión.', true);
+      btnScan.disabled = false; return;
+    }
+    if (cuentas.some(c => c.correo === pendingUser.correo)){
+      oval.classList.remove('scanning'); oval.classList.add('warn');
+      hint.textContent = 'Este correo ya tiene una cuenta.';
+      toast('Correo ya registrado. Inicia sesión.', true);
+      btnScan.disabled = false; return;
+    }
+
+    cuentaPendiente = {
+      id: 'c_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
+      ...pendingUser,
+      numeroCuenta: genNumeroCuenta(),
+      saldo: randomSaldo(),
+      estado: 'activa',
+      creadoEn: new Date().toISOString(),
+      biometria: descriptor
+    };
+
+    oval.classList.remove('scanning');
+    oval.classList.add('ok');
+    hint.textContent = 'Identidad verificada';
+    buzz([30, 40, 30]);
+
+    setTimeout(() => {
+      const first = cuentaPendiente.nombres.split(' ')[0];
+      $('doneTitle').textContent = '¡Bienvenida o bienvenido, ' + first + '!';
+      $('acctNum').textContent = cuentaPendiente.numeroCuenta;
+      animateMoney($('doneSaldo'), cuentaPendiente.saldo);
+      btnScan.disabled = false;
+      $('btnSave').disabled = false;
+      $('btnSave').textContent = 'Guardar cuenta';
+      go('s-done');
+    }, 800);
+  }
+
+  /* ============================================================
+     Guardar cuenta
+  ============================================================ */
+  $('btnSave').addEventListener('click', () => {
+    if (!cuentaPendiente) {
+      toast('No hay cuenta pendiente de guardar', true);
+      return;
+    }
+    const cuentas = loadCuentas();
+    if (cuentas.some(c => c.cedula === cuentaPendiente.cedula || c.correo === cuentaPendiente.correo)) {
+      toast('Esta cuenta ya fue guardada', true);
+      return;
+    }
+    cuentas.push(cuentaPendiente);
+    saveCuentas(cuentas);
+    saveSession(cuentaPendiente);
+    toast('✅ Cuenta guardada. Sesión iniciada.');
+    $('btnSave').disabled = true;
+    $('btnSave').textContent = 'Cuenta guardada ✓';
+    buzz([50, 30, 50]);
+    const primera = cuentaPendiente;
+    cuentaPendiente = null;
+    pendingUser = null;
+    setTimeout(() => showDashboard(primera), 900);
+  });
+
+  /* ============================================================
+     LOGIN CON DATOS GUARDADOS
+  ============================================================ */
+  function renderAccounts(){
+    const cuentas = loadCuentas();
+    const cont = $('accountsContainer');
+    cont.innerHTML = '';
+
+    if (!cuentas.length){
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.innerHTML = 'Aún no hay cuentas guardadas en este dispositivo.<br>Abre una cuenta nueva para empezar.';
+      cont.appendChild(empty);
+      return;
+    }
+
+    const title = document.createElement('p');
+    title.className = 'lead';
+    title.style.marginTop = '0';
+    title.style.fontSize = '.8rem';
+    title.textContent = 'Cuentas guardadas en este dispositivo:';
+    cont.appendChild(title);
+
+    const list = document.createElement('div');
+    list.className = 'accounts-list';
+
+    cuentas.forEach(c => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'account-item';
+      btn.setAttribute('aria-label', 'Iniciar sesión como ' + c.nombres);
+
+      const initials = c.nombres.trim().split(/\s+/).slice(0,2).map(w => w[0].toUpperCase()).join('');
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = initials || '?';
+
+      const info = document.createElement('div');
+      info.className = 'info';
+      const strong = document.createElement('strong');
+      strong.textContent = c.nombres;
+      const small = document.createElement('small');
+      small.className = 'masked';
+      small.textContent = maskNum(c.numeroCuenta);
+      info.appendChild(strong);
+      info.appendChild(small);
+
+      const chev = document.createElement('div');
+      chev.className = 'chev';
+      chev.textContent = '›';
+
+      btn.appendChild(avatar);
+      btn.appendChild(info);
+      btn.appendChild(chev);
+
+      btn.addEventListener('click', () => {
+        // Autocompleta el formulario y hace login directo
+        $('loginId').value = c.cedula;
+        $('loginNum').value = c.numeroCuenta;
+        tryLogin();
+      });
+
+      list.appendChild(btn);
+    });
+
+    cont.appendChild(list);
+  }
+
+  function tryLogin(){
+    const idRaw = $('loginId').value.trim();
+    const numRaw = $('loginNum').value.trim();
+
+    let ok = true;
+    const idField = $('loginId').parentElement;
+    const numField = $('loginNum').parentElement;
+    idField.classList.remove('bad');
+    numField.classList.remove('bad');
+
+    if (!idRaw){ idField.classList.add('bad'); ok = false; }
+    const numDigits = numRaw.replace(/\D/g,'');
+    if (numDigits.length !== 12){ numField.classList.add('bad'); ok = false; }
+    if (!ok) return;
+
+    const cuentas = loadCuentas();
+    const match = cuentas.find(c =>
+      (c.cedula === idRaw || c.correo.toLowerCase() === idRaw.toLowerCase()) &&
+      c.numeroCuenta.replace(/\s/g,'') === numDigits
+    );
+
+    if (!match){
+      toast('Datos incorrectos. Revisa tu cédula/correo y número de cuenta.', true);
+      return;
+    }
+    if (match.estado !== 'activa'){
+      toast('Esta cuenta no está activa.', true);
+      return;
+    }
+    saveSession(match);
+    toast('Bienvenido de nuevo, ' + match.nombres.split(' ')[0]);
+    buzz([20, 40, 20]);
+    showDashboard(match);
+  }
+
+  $('loginForm').addEventListener('submit', e => {
+    e.preventDefault();
+    tryLogin();
+  });
+  // Permitir espacios en el número de cuenta y limpiar al validar
+  $('loginNum').addEventListener('input', e => {
+    // Deja dígitos y espacios, máximo 14 caracteres (12 dígitos + 2 espacios)
+    let v = e.target.value.replace(/[^\d\s]/g,'');
+    // Agrupa en bloques de 4 mientras se escribe
+    const digits = v.replace(/\s/g,'').slice(0,12);
+    const grouped = digits.replace(/(\d{4})(?=\d)/g, '$1 ');
+    e.target.value = grouped;
+  });
+  $('loginId').addEventListener('input', () => $('loginId').parentElement.classList.remove('bad'));
+
+  $('btnLogin').addEventListener('click', () => go('s-login'));
+
+  /* ============================================================
+     Dashboard
+  ============================================================ */
+  function showDashboard(cuenta){
+    const first = cuenta.nombres.split(' ')[0];
+    $('dashHello').textContent = 'Hola de nuevo, ' + first;
+    $('dashNum').textContent = cuenta.numeroCuenta;
+    $('dashOwner').textContent = cuenta.nombres;
+    $('dashEstado').textContent = cuenta.estado;
+    $('dashFecha').textContent = new Date(cuenta.creadoEn).toLocaleDateString('es-EC');
+    animateMoney($('dashSaldo'), cuenta.saldo);
+    go('s-dashboard');
+  }
+
+  function animateMoney(el, target){
+    const dur = 1200, start = performance.now();
+    function frame(t){
+      const k = Math.min(1, (t - start) / dur);
+      const eased = 1 - Math.pow(1 - k, 3);
+      el.textContent = fmtMoney(target * eased);
+      if (k < 1) requestAnimationFrame(frame);
+      else el.textContent = fmtMoney(target);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* ============================================================
+     Acciones finales
+  ============================================================ */
+  async function copyNum(el){
+    const txt = el.textContent.replace(/\s/g,'');
+    try { await navigator.clipboard.writeText(txt); toast('Número de cuenta copiado'); }
+    catch(e){ toast('No se pudo copiar', true); }
+  }
+  $('btnCopy').addEventListener('click', () => copyNum($('acctNum')));
+  $('btnCopy2').addEventListener('click', () => copyNum($('dashNum')));
+
+  $('btnRestart').addEventListener('click', () => {
+    $('form').reset();
+    pendingUser = null;
+    cuentaPendiente = null;
+    go('s-welcome');
+  });
+  $('btnLogout').addEventListener('click', () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    go('s-welcome');
+    toast('Sesión cerrada');
+  });
+
+  /* ============================================================
+     Arranque
+  ============================================================ */
+  $('loader').classList.add('hide');
+
+  // Restaurar sesión si existe
+  if (!restoreSessionIfAny()){
+    // Si no hay sesión, quedarse en welcome
+  }
+
+  window.addEventListener('pagehide', stopCamera);
+})();
+</script>
+</body>
+</html>
